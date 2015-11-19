@@ -23,11 +23,16 @@ a: 11, b:12, c:13
 ## Build
 
 Build the matrix by given a csv representation of the table.
-At least two rows a mandatories.
+
+At least two rows are mandatories.
+
 One for keys (a, b, c in the example).
+
 One or more for values.
 
+
 csv is composed of lines separated by \n
+
 Each line is composed of tokens separated by ;
 
 ```shell
@@ -45,6 +50,7 @@ curl -i -X POST \
 ## Search
 
 Search is composed by one or many keys, values represented in a json format.
+
 This json is in the q key.
 
 
