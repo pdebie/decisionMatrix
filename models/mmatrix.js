@@ -6,6 +6,8 @@ var mmatrix = (function () {
 
   var filematrix = '../data.json';
   
+  var matrixloaded = false;
+  /*
   var matrix = {
     items : [
   //    {id: 1, k: "a", v:"11"}, 
@@ -17,40 +19,51 @@ var mmatrix = (function () {
     
     ]
   };
+  */
   
-  var listMatrix = function() {
-    var titi = {};
+  var loadMatrix = function(apploc) {
+    apploc.matrixes = {};
+    console.log('loadMatrix');
+    var tempMatrix = {};
     try {
-      titi = jsonfile.readFileSync(filematrix);
-      console.dir(titi);
+      tempMatrix = jsonfile.readFileSync(filematrix);
+      // console.dir(tempMatrix);
     }
       catch (e) {
     };
-    console.dir(titi);
-    return matrix;
-  };
-
-  var getMatrix = function(_id) {
-    return matrix;
+    console.dir(tempMatrix);
+    if (!_.isEmpty(tempMatrix)) {
+      console.log('Init matrix', tempMatrix);
+      apploc.matrixes = tempMatrix;
+    };
   };
   
-  var findIndexOfKeyValue = function (kv) {
+  var listMatrix = function(myapp) {
+    // console.log(_bibi.locals.fifi);
+    return myapp.locals.matrixes;
+  };
+
+  var getMatrix = function(_id, myapp) {
+    return myapp.locals.matrixes;
+  };
+  
+  var findIndexOfKeyValue = function (kv, myapp) {
     var _result = -1;
     var z = {};
-    z = _.findWhere(matrix.items, kv);
+    z = _.findWhere(myapp.locals.matrixes.items, kv);
     if (!_.isUndefined(z)) {
       _result = z.id;
     };
     return _result;
   };
   
-  var searchPath = function (thisPath) {
+  var searchPath = function (thisPath, myapp) {
     var diffLeft = [];
     var diffRight = [];
     var _result = {};
     _result.found = false;
     _result.value = {};
-    _.each(matrix.paths, function(p) {
+    _.each(myapp.locals.matrixes.paths, function(p) {
       if (!_result.found) {
         diffLeft = _.difference(thisPath, p.path);
         diffRight = _.difference(p.path, thisPath);
@@ -65,21 +78,28 @@ var mmatrix = (function () {
   };
   
   
-  /* ******************
-      Create a Matrix
-     ******************
-   */
+ /* *********************************
+  * Create Matrix functions
+  * *********************************
+  */
    
-  /**
+   
+  /*
    * Insert a pair of kay value only if not exists
    */
-  var insertMatrixItem = function (obj) {
+  var insertMatrixItem = function (obj, myapp) {
     var _id = -1;
-    _id = findIndexOfKeyValue(obj);
+    
+    if (_.isUndefined(myapp.locals.matrixes.items)) {
+      console.log('no items');
+      myapp.locals.matrixes.items = [];
+    };
+    
+    _id = findIndexOfKeyValue(obj, myapp);
     if (_id < 0) {
       /* before insert new item find last id */
       var maxidobj = {};
-      maxidobj = _.max(matrix.items, function(chr) {
+      maxidobj = _.max(myapp.locals.matrixes.items, function(chr) {
         return chr.id;
       });
       var newItem = _.clone(obj);
@@ -91,15 +111,16 @@ var mmatrix = (function () {
         _id = 0;
         newItem['id'] = 0;
       };
-      matrix.items.push(newItem);
+      myapp.locals.matrixes.items.push(newItem);
     };
     return _id;
   };
   
-  /*
-    Add a new row of many pair of keys, values and its corresponding path
+ /*
+  * Add a new row of many pair of keys, values and its corresponding path
+  *
   */
-  var addRowMatrix = function (ka, va) {
+  var addRowMatrix = function (ka, va, myapp) {
     var newPath = {};
     newPath.order = 1;
     newPath.path = [];
@@ -115,25 +136,28 @@ var mmatrix = (function () {
         pair.k = k;
         pair.v = v;
   
-        newPath.path.push(insertMatrixItem(pair));
+        newPath.path.push(insertMatrixItem(pair, myapp));
       };
     });
     
-    var zz = searchPath(newPath.path);
+    var zz = searchPath(newPath.path, myapp);
     /* add only if not exists */
     if (!zz.found) {
-      matrix.paths.push(newPath);
+      if (_.isUndefined(myapp.locals.matrixes.paths)) {
+        console.log('no path');
+        myapp.locals.matrixes.paths = [];
+      };
+      myapp.locals.matrixes.paths.push(newPath);
     };
   };
   
-  /**
+  /* *********************************************************
    * Add or update a complete Matrix of many rows
    * First row header for the keys
    * Second and followers rows of values
-   * 
-   **/
-  
-  var addMatrix = function(csvdef) {
+   * *********************************************************
+   */
+  var addMatrix = function(csvdef, myapp) {
     var _result = {};
     _result.result = "success";
     _result.message = "";
@@ -149,12 +173,12 @@ var mmatrix = (function () {
       var _ka = _k.split(";");
       _.each(_.rest(rows), function(aRow) {
         var _va = aRow.split(";");
-        addRowMatrix(_ka, _va);
+        addRowMatrix(_ka, _va, myapp);
         
       });
     };
     try {
-      jsonfile.writeFile(filematrix, matrix, function (err) {
+      jsonfile.writeFile(filematrix, myapp.locals.matrixes, function (err) {
         console.error(err)
       });      
       console.log('saved');
@@ -164,18 +188,18 @@ var mmatrix = (function () {
     return _result;
   };
   
-  /** ******************
-   *  Search in a Matrix
-   *  ******************
-   **/
+  /* ******************
+   *  Search functions
+   * ******************
+   */
   
-  var buildSearchPath = function (_si) {
+  var buildSearchPath = function (_si, myapp) {
     var _pathForIn = [];
     var idx = -1;
     var result = true;
   
     _.each(_si, function(i) {
-    	idx = findIndexOfKeyValue(i);
+    	idx = findIndexOfKeyValue(i, myapp);
       if (idx < 0) {
         result = false;
       }
@@ -204,36 +228,27 @@ var mmatrix = (function () {
     return searchItem;
   };
   
-  /**
+  
+  /* ******************
    * Search matrix
-   * 
-   **/
-  var searchMatrix = function(query) {
+   * ******************
+   */
+  var searchMatrix = function(query, myapp) {
     var si = []; /* search item */
     var sp = []; /* search path */
     si = buildSearchItem(query);
-    console.log(si);
-    sp = buildSearchPath(si);
-    console.log(sp);
-    return searchPath(sp);
+    sp = buildSearchPath(si, myapp);
+    return searchPath(sp, myapp);
   };
     
     
-    
-    
 
-
-
-    
-    
-    
-  
   return {
-    
     searchMatrix: searchMatrix,
     addMatrix: addMatrix,
     getMatrix: getMatrix,
-    listMatrix: listMatrix
+    listMatrix: listMatrix,
+    loadMatrix: loadMatrix
   };
 
 })();

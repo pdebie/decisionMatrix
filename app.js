@@ -9,6 +9,8 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var matrix = require('./routes/matrix');
 
+var mmatrix = require('./models/mmatrix');
+
 var app = express();
 
 // view engine setup
@@ -26,6 +28,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', routes);
 app.use('/users', users);
 app.use('/matrix', matrix);
+
+mmatrix.loadMatrix(app.locals);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
