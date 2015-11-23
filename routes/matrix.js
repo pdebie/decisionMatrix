@@ -15,21 +15,7 @@ router.get('/:id', function(req, res, next) {
 });
 
 router.post('/', function(req, res, next) {
-  var _result = {};
-  _result.result = "";
-  if (!_.isUndefined(req.body.action)) {
-    if (req.body.action === "store"){
-      _result = mmatrix.addMatrix(req.body.definition, req.app);
-    }
-    else {
-      _result = mmatrix.searchMatrix(req.body.q, req.app);
-    };
-  }
-  else {
-    _result.result = "failed"
-    _result.message = "action undefined";
-  };
-  res.json(_result);
+  res.json(mmatrix.postMatrix(req.body, req.app));
 });
 
 
